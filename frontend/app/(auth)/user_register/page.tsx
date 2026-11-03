@@ -26,39 +26,74 @@ export default function Page() {
     if (errorMsg) setErrorMsg("");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMsg("");
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setErrorMsg("");
 
-    if (!formData.name.trim()) {
-      setErrorMsg("Please enter your full name.");
-      return;
-    }
-    if (!formData.email.trim() || !formData.email.includes("@")) {
-      setErrorMsg("Please enter a valid email address.");
-      return;
-    }
-    if (formData.password.length < 6) {
-      setErrorMsg("Password must be at least 6 characters long.");
-      return;
-    }
-    if (formData.password !== formData.confirmPassword) {
-      setErrorMsg("Passwords do not match. Please verify.");
-      return;
-    }
-    if (!formData.agreedToTerms) {
-      setErrorMsg("Please accept the terms and conditions to join Elvora.");
-      return;
-    }
+  // Validation
+  if (!formData.name.trim()) {
+    setErrorMsg("Please enter your full name.");
+    return;
+  }
 
+  if (!formData.email.trim() || !formData.email.includes("@")) {
+    setErrorMsg("Please enter a valid email address.");
+    return;
+  }
+
+  // Backend requires minimum 8 characters
+  if (formData.password.length < 8) {
+    setErrorMsg("Password must be at least 8 characters long.");
+    return;
+  }
+
+  if (formData.password !== formData.confirmPassword) {
+    setErrorMsg("Passwords do not match. Please verify.");
+    return;
+  }
+
+  if (!formData.agreedToTerms) {
+    setErrorMsg("Please accept the terms and conditions to join Elvora.");
+    return;
+  }
+
+  try {
     setIsLoading(true);
 
-    // Simulate account registration
-    setTimeout(() => {
-      setIsLoading(false);
-      setIsSuccess(true);
-    }, 800);
-  };
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          password: formData.password,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Registration failed.");
+    }
+
+    setIsSuccess(true);
+
+  } catch (error) {
+    setErrorMsg(
+      error instanceof Error
+        ? error.message
+        : "Something went wrong. Please try again."
+    );
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#EDE5D8] px-4 py-12 md:py-16">
